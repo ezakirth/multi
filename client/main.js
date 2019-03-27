@@ -5,6 +5,11 @@ var playerId = null;
 
 var timer = new Timer();
 
+window.onresize = function () {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
 function setup() {
     canvas = document.getElementById('canvas');
 

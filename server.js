@@ -36,6 +36,11 @@ io.on('connection', function (socket) {
     io.emit('disconnected', socket.id);
     delete players[socket.id];
   });
+
+  socket.on('pingtest', function () {
+    socket.emit('pongtest');
+  });
+
 });
 
 setInterval(function () {

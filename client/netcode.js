@@ -1,3 +1,16 @@
+var startTime, latency;
+
+socket.on('pongtest', function () {
+    latency = Date.now() - startTime;
+    document.getElementById('ping').innerText = latency + 'ms';
+});
+
+setInterval(function () {
+    startTime = Date.now();
+    socket.emit('pingtest');
+}, 2000);
+
+
 socket.on('init', function (player) {
     playerId = player.id;
     players[playerId] = new Player(player.id, player.position);

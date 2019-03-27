@@ -1,6 +1,3 @@
-var socket = io('http://localhost:8080');
-
-
 socket.on('init', function (player) {
     playerId = player.id;
     players[playerId] = new Player(player.id, player.position);

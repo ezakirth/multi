@@ -7,6 +7,3 @@ function keyUpdate(e) {
 
 window.addEventListener('keydown', keyUpdate);
 window.addEventListener('keyup', keyUpdate);
-
-
-pendingMovement = [];

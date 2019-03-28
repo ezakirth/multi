@@ -5,6 +5,8 @@ var userId = null;
 
 var timer = new Timer();
 
+var serverDelay = 100;
+
 window.onresize = function () {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -23,6 +25,8 @@ function setup() {
 
 function update() {
     timer.update();
+    last += timer.delta;
+
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -31,28 +35,27 @@ function update() {
 
     for (let id in users) {
         let user = users[id];
-        ctx.fillRect(user.position.x, user.position.y, 32, 32);
+        ctx.save();
+        ctx.translate(user.position.x, user.position.y);
+        ctx.rotate(user.position.r * Math.PI / 180);
+        ctx.fillRect(0, 0, 32, 32);
+        ctx.restore();
     }
 
     if (user) {
-
-
         user.update();
-
     }
-
 
     interpolatePositions();
 
     window.requestAnimationFrame(update);
 }
 
-
-
+lastPosition = { x: 0, y: 0, r: 0 };
 
 function interpolatePositions() {
     // Compute render timestamp.
-    var renderTimestamp = new Date() - 100;
+    var renderTimestamp = new Date() - serverDelay;
 
     for (let id in users) {
         var user = users[id];

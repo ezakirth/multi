@@ -51,7 +51,7 @@ function update() {
     window.requestAnimationFrame(update);
 }
 
-lastPosition = { x: 0, y: 0, r: 0 };
+
 
 function interpolatePositions() {
     // Compute render timestamp.

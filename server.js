@@ -1,4 +1,16 @@
+class User {
+  constructor(id) {
+    this.id = id;
+    this.position = {
+      x: Math.random() * 300,
+      y: Math.random() * 300,
+      r: 0
+    };
+    this.sequence = 0;
+  }
+}
 var users = {};
+var history = {};
 
 const express = require('express');
 const socketIO = require('socket.io');
@@ -14,15 +26,7 @@ const server = express()
 const io = socketIO(server);
 
 io.on('connection', function (socket) {
-  let user = {
-    id: socket.id,
-    position: {
-      x: Math.random() * 300,
-      y: Math.random() * 300,
-      r: 0
-    },
-    sequence: 0
-  };
+  let user = new User(socket.id);
   users[socket.id] = user;
   socket.emit('init', user);
 
@@ -46,5 +50,14 @@ io.on('connection', function (socket) {
 });
 
 setInterval(function () {
-  io.emit('update', users);
+  let timestamp = +new Date();
+  history[timestamp] = JSON.parse(JSON.stringify(users));
+
+  let list = Object.keys(history);
+
+  if (list.length > 10) {
+    delete history[list[0]];
+  }
+
+  io.emit('update', { timestamp: timestamp, users: users });
 }, 100);

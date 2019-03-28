@@ -1,7 +1,7 @@
 var canvas, ctx;
 
-var players = {};
-var playerId = null;
+var users = {};
+var userId = null;
 
 var timer = new Timer();
 
@@ -26,23 +26,23 @@ function update() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    let player = players[playerId];
+    let user = users[userId];
 
 
-    for (let id in players) {
-        let player = players[id];
-        ctx.fillRect(player.position.x, player.position.y, 32, 32);
+    for (let id in users) {
+        let user = users[id];
+        ctx.fillRect(user.position.x, user.position.y, 32, 32);
     }
 
-    if (player) {
+    if (user) {
 
 
-        player.update();
+        user.update();
 
     }
 
 
-    interpolateplayers();
+    interpolatePositions();
 
     window.requestAnimationFrame(update);
 }
@@ -50,20 +50,20 @@ function update() {
 
 
 
-function interpolateplayers() {
+function interpolatePositions() {
     // Compute render timestamp.
     var renderTimestamp = new Date() - 100;
 
-    for (let id in players) {
-        var player = players[id];
+    for (let id in users) {
+        var user = users[id];
 
-        // No point in interpolating this client's player.
-        if (player.id == playerId) {
+        // No point in interpolating this client's user.
+        if (user.id == userId) {
             continue;
         }
 
         // Find the two authoritative positions surrounding the rendering timestamp.
-        var buffer = player.positionBuffer;
+        var buffer = user.positionBuffer;
 
         // Drop positions older than 100ms.
         while (buffer.length >= 2 && buffer[1].timestamp <= renderTimestamp) {
@@ -75,14 +75,17 @@ function interpolateplayers() {
         if (buffer.length >= 2 && buffer[0].timestamp <= renderTimestamp && buffer[1].timestamp >= renderTimestamp) {
             var x0 = buffer[0].position.x;
             var y0 = buffer[0].position.y;
+            var r0 = buffer[0].position.r;
             var t0 = buffer[0].timestamp;
 
             var x1 = buffer[1].position.x;
             var y1 = buffer[1].position.y;
+            var r1 = buffer[1].position.r;
             var t1 = buffer[1].timestamp;
 
-            player.position.x = x0 + (x1 - x0) * (renderTimestamp - t0) / (t1 - t0);
-            player.position.y = y0 + (y1 - y0) * (renderTimestamp - t0) / (t1 - t0);
+            user.position.x = x0 + (x1 - x0) * (renderTimestamp - t0) / (t1 - t0);
+            user.position.y = y0 + (y1 - y0) * (renderTimestamp - t0) / (t1 - t0);
+            user.position.r = r0 + (r1 - r0) * (renderTimestamp - t0) / (t1 - t0);
         }
     }
 }

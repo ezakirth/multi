@@ -11,27 +11,27 @@ setInterval(function () {
 }, 2000);
 
 
-socket.on('init', function (player) {
-    playerId = player.id;
-    players[playerId] = new Player(player.id, player.position);
+socket.on('init', function (user) {
+    userId = user.id;
+    users[userId] = new User(user.id, user.position);
 });
 
 socket.on('disconnected', function (id) {
-    delete players[id];
+    delete users[id];
 });
 
 socket.on('update', function (data) {
     for (let id in data) {
         let playerData = data[id];
-        if (!players[id]) {
-            players[id] = new Player(playerData.id, playerData.position);
+        if (!users[id]) {
+            users[id] = new User(playerData.id, playerData.position);
         }
 
-        let player = players[id];
+        let user = users[id];
 
-        if (id == playerId) {
-            // Received the authoritative position of this client's player.
-            player.position = playerData.position;
+        if (id == userId) {
+            // Received the authoritative position of this client's user.
+            user.position = playerData.position;
 
             // Server Reconciliation. Re-apply all the inputs not yet processed by the server.
             var j = 0;
@@ -42,17 +42,18 @@ socket.on('update', function (data) {
                     // we just got, so we can drop it.
                     pendingMovement.splice(j, 1);
                 } else {
-                    player.position.x += movementData.movement.x;
-                    player.position.y += movementData.movement.y;
+                    user.position.x += movementData.movement.x;
+                    user.position.y += movementData.movement.y;
+                    user.position.r = movementData.movement.r;
                     j++;
                 }
             }
 
         } else {
-            // Received the position of an player other than this client's.
+            // Received the position of an user other than this client's.
 
             // Add it to the position buffer.
-            player.positionBuffer.push({ timestamp: new Date(), position: playerData.position });
+            user.positionBuffer.push({ timestamp: new Date(), position: playerData.position });
         }
     }
 

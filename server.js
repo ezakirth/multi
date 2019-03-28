@@ -1,4 +1,4 @@
-var players = {};
+var users = {};
 
 const express = require('express');
 const socketIO = require('socket.io');
@@ -14,27 +14,29 @@ const server = express()
 const io = socketIO(server);
 
 io.on('connection', function (socket) {
-  let player = {
+  let user = {
     id: socket.id,
     position: {
       x: Math.random() * 300,
-      y: Math.random() * 300
+      y: Math.random() * 300,
+      r: 0
     },
     sequence: 0
   };
-  players[socket.id] = player;
-  socket.emit('init', player);
+  users[socket.id] = user;
+  socket.emit('init', user);
 
   socket.on('update', function (movementData) {
-    let player = players[socket.id];
-    player.position.x += movementData.movement.x;
-    player.position.y += movementData.movement.y;
-    player.sequence = movementData.sequence;
+    let user = users[socket.id];
+    user.position.x += movementData.movement.x;
+    user.position.y += movementData.movement.y;
+    user.position.r += movementData.movement.r;
+    user.sequence = movementData.sequence;
   });
 
   socket.on('disconnect', function () {
     io.emit('disconnected', socket.id);
-    delete players[socket.id];
+    delete users[socket.id];
   });
 
   socket.on('pingtest', function () {
@@ -44,5 +46,5 @@ io.on('connection', function (socket) {
 });
 
 setInterval(function () {
-  io.emit('update', players);
+  io.emit('update', users);
 }, 100);

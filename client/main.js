@@ -24,6 +24,7 @@ function setup() {
 }
 
 function update() {
+    window.requestAnimationFrame(update);
     timer.update();
     last += timer.delta;
 
@@ -35,10 +36,12 @@ function update() {
 
     for (let id in users) {
         let user = users[id];
+        let ang = Math.atan2(user.direction.y, user.direction.x);
+
         ctx.save();
         ctx.translate(user.position.x, user.position.y);
-        ctx.rotate(user.position.r * Math.PI / 180);
-        ctx.fillRect(0, 0, 32, 32);
+        ctx.rotate(ang);
+        ctx.fillRect(-16, -16, 32, 32);
         ctx.restore();
     }
 
@@ -48,7 +51,7 @@ function update() {
 
     interpolatePositions();
 
-    window.requestAnimationFrame(update);
+
 }
 
 
@@ -78,17 +81,20 @@ function interpolatePositions() {
         if (buffer.length >= 2 && buffer[0].timestamp <= renderTimestamp && buffer[1].timestamp >= renderTimestamp) {
             var x0 = buffer[0].position.x;
             var y0 = buffer[0].position.y;
-            var r0 = buffer[0].position.r;
+            var dx0 = buffer[0].direction.x;
+            var dy0 = buffer[0].direction.y;
             var t0 = buffer[0].timestamp;
 
             var x1 = buffer[1].position.x;
             var y1 = buffer[1].position.y;
-            var r1 = buffer[1].position.r;
+            var dx1 = buffer[1].direction.x;
+            var dy1 = buffer[1].direction.y;
             var t1 = buffer[1].timestamp;
 
             user.position.x = x0 + (x1 - x0) * (renderTimestamp - t0) / (t1 - t0);
             user.position.y = y0 + (y1 - y0) * (renderTimestamp - t0) / (t1 - t0);
-            user.position.r = r0 + (r1 - r0) * (renderTimestamp - t0) / (t1 - t0);
+            user.direction.x = dx0 + (dx1 - dx0) * (renderTimestamp - t0) / (t1 - t0);
+            user.direction.y = dy0 + (dy1 - dy0) * (renderTimestamp - t0) / (t1 - t0);
         }
     }
 }

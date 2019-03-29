@@ -3,9 +3,9 @@ class User {
     this.id = id;
     this.position = {
       x: Math.random() * 300,
-      y: Math.random() * 300,
-      r: 0
+      y: Math.random() * 300
     };
+    this.direction = { x: 1, y: 0 };
     this.sequence = 0;
   }
 }
@@ -34,7 +34,8 @@ io.on('connection', function (socket) {
     let user = users[socket.id];
     user.position.x += movementData.movement.x;
     user.position.y += movementData.movement.y;
-    user.position.r += movementData.movement.r;
+    user.direction.x += movementData.movement.dx;
+    user.direction.y += movementData.movement.dy;
     user.sequence = movementData.sequence;
   });
 

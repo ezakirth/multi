@@ -1,4 +1,4 @@
-class User {
+class Client {
   constructor(id) {
     this.id = id;
     this.position = {
@@ -9,7 +9,7 @@ class User {
     this.sequence = 0;
   }
 }
-var users = {};
+var clients = {};
 var history = {};
 
 const express = require('express');
@@ -26,22 +26,22 @@ const server = express()
 const io = socketIO(server);
 
 io.on('connection', function (socket) {
-  let user = new User(socket.id);
-  users[socket.id] = user;
-  socket.emit('init', user);
+  let client = new Client(socket.id);
+  clients[socket.id] = client;
+  socket.emit('init', client);
 
   socket.on('update', function (movementData) {
-    let user = users[socket.id];
-    user.position.x += movementData.movement.x;
-    user.position.y += movementData.movement.y;
-    user.direction.x += movementData.movement.dx;
-    user.direction.y += movementData.movement.dy;
-    user.sequence = movementData.sequence;
+    let client = clients[socket.id];
+    client.position.x += movementData.movement.x;
+    client.position.y += movementData.movement.y;
+    client.direction.x += movementData.movement.dx;
+    client.direction.y += movementData.movement.dy;
+    client.sequence = movementData.sequence;
   });
 
   socket.on('disconnect', function () {
     io.emit('disconnected', socket.id);
-    delete users[socket.id];
+    delete clients[socket.id];
   });
 
   socket.on('pingtest', function () {
@@ -52,7 +52,7 @@ io.on('connection', function (socket) {
 
 setInterval(function () {
   let timestamp = +new Date();
-  history[timestamp] = JSON.parse(JSON.stringify(users));
+  history[timestamp] = JSON.parse(JSON.stringify(clients));
 
   let list = Object.keys(history);
 
@@ -60,5 +60,5 @@ setInterval(function () {
     delete history[list[0]];
   }
 
-  io.emit('update', { timestamp: timestamp, users: users });
+  io.emit('update', { timestamp: timestamp, clients: clients });
 }, 100);

@@ -11,94 +11,94 @@ setInterval(function () {
 }, 2000);
 
 
-socket.on('init', function (user) {
-    userId = user.id;
-    users[userId] = new User(user.id, user.position);
+socket.on('init', function (client) {
+    clientId = client.id;
+    clients[clientId] = new Client(client.id, client.position);
 });
 
 socket.on('disconnected', function (id) {
-    delete users[id];
+    delete clients[id];
 });
 
 
 setInterval(function () {
-    let user = users[userId];
-    if (user) {
-        sendMovementData(user);
+    let client = clients[clientId];
+    if (client) {
+        sendMovementData(client);
     }
 }, 100);
 
 
-function sendMovementData(user) {
+function sendMovementData(client) {
     // get movement since last one sent to server
     let deltaPosition = {
-        x: user.position.x - user.lastPosition.x,
-        y: user.position.y - user.lastPosition.y,
-        dx: user.direction.x - user.lastPosition.dx,
-        dy: user.direction.y - user.lastPosition.dy,
+        x: client.position.x - client.lastPosition.x,
+        y: client.position.y - client.lastPosition.y,
+        dx: client.direction.x - client.lastPosition.dx,
+        dy: client.direction.y - client.lastPosition.dy,
     }
 
     // If there was movement, notify the server
     if (Math.abs(deltaPosition.x) + Math.abs(deltaPosition.y) + Math.abs(deltaPosition.dx) + Math.abs(deltaPosition.dy) > 0) {
-        user.lastPosition = { x: user.position.x, y: user.position.y, dx: user.direction.x, dy: user.direction.y };
+        client.lastPosition = { x: client.position.x, y: client.position.y, dx: client.direction.x, dy: client.direction.y };
         // send movement to server for validation
-        let movementData = { movement: deltaPosition, sequence: ++user.sequence };
+        let movementData = { movement: deltaPosition, sequence: ++client.sequence };
         socket.emit('update', movementData);
 
         // store movements for later reconciliation
-        user.pendingMovement.push(movementData);
+        client.pendingMovement.push(movementData);
     }
 }
 
-var last = 0;
 socket.on('update', function (data) {
-    serverDelay = last * 1000;
-    last = 0;
+    let timestamp = +new Date();
+
+    timer.setServerDelay(timestamp);
 
     lastServerTimestamp = data.timestamp;
-    let serverUsers = data.users;
+    let serverUsers = data.clients;
     for (let id in serverUsers) {
         let playerData = serverUsers[id];
-        if (!users[id]) {
-            users[id] = new User(playerData.id, playerData.position);
+        if (!clients[id]) {
+            clients[id] = new Client(playerData.id, playerData.position);
         }
 
-        let user = users[id];
+        let client = clients[id];
 
-        if (id == userId) {
+        if (id == clientId) {
 
-            // if there was moment between last server update, send it now
-            sendMovementData(user)
+            // if there was movement since the last server update, send it now
+            sendMovementData(client)
 
-            // Received the authoritative position of this client's user.
-            user.position.x = playerData.position.x;
-            user.position.y = playerData.position.y;
-            user.direction.x = playerData.direction.x;
-            user.direction.y = playerData.direction.y;
+            // Received the authoritative position of this client's client.
+            client.position.x = playerData.position.x;
+            client.position.y = playerData.position.y;
+            client.direction.x = playerData.direction.x;
+            client.direction.y = playerData.direction.y;
 
 
             // Server Reconciliation. Re-apply all the inputs not yet processed by the server.
             var j = 0;
-            while (j < user.pendingMovement.length) {
-                let movementData = user.pendingMovement[j];
+            while (j < client.pendingMovement.length) {
+                let movementData = client.pendingMovement[j];
                 if (movementData.sequence <= playerData.sequence) {
                     // Already processed. Its effect is already taken into account into the world update
                     // we just got, so we can drop it.
-                    user.pendingMovement.splice(j, 1);
+                    client.pendingMovement.splice(j, 1);
                 } else {
-                    user.position.x += movementData.movement.x;
-                    user.position.y += movementData.movement.y;
-                    user.direction.x += movementData.movement.dx;
-                    user.direction.y += movementData.movement.dy;
+                    client.position.x += movementData.movement.x;
+                    client.position.y += movementData.movement.y;
+                    client.direction.x += movementData.movement.dx;
+                    client.direction.y += movementData.movement.dy;
                     j++;
                 }
             }
 
         } else {
-            // Received the position of an user other than this client's.
+            // Received the position of an client other than this client's.
 
             // Add it to the position buffer.
-            user.positionBuffer.push({ timestamp: new Date(), position: playerData.position, direction: playerData.direction });
+            client.positionBuffer.push({ timestamp: timestamp, position: playerData.position, direction: playerData.direction });
         }
     }
 

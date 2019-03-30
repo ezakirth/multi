@@ -11,7 +11,7 @@ class Timer {
 
     update() {
         this.now = +new Date();
-        this.renderTimestamp = this.now - this.serverDelay;
+        this.renderTimestamp = this.now + this.serverUpdateDelay;
         this.delta = (this.now - this.last) / 1000.0;
         this.last = this.now;
 

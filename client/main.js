@@ -1,9 +1,9 @@
 var canvas, ctx;
 
 var clients = {};
-var clientId = null;
+var localClientId = null;
 
-var timer = new Timer();
+var time = new Timer();
 
 
 window.onresize = function () {
@@ -23,16 +23,15 @@ function setup() {
 function draw() {
     window.requestAnimationFrame(draw);
 
-    timer.update();
+    time.update();
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    for (let id in clients) {
-        let client = clients[id];
+    for (let clientId in clients) {
+        let client = clients[clientId];
 
         client.update();
         client.draw();
     }
 
 }
-

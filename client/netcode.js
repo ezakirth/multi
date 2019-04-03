@@ -12,17 +12,17 @@ setInterval(function () {
 
 
 socket.on('init', function (client) {
-    clientId = client.id;
-    clients[clientId] = new Client(client.id, client.position);
+    localClientId = client.networkData.clientId;
+    clients[localClientId] = new Client(localClientId, client.position);
 });
 
-socket.on('disconnected', function (id) {
-    delete clients[id];
+socket.on('disconnected', function (clientId) {
+    delete clients[clientId];
 });
 
 
 setInterval(function () {
-    let client = clients[clientId];
+    let client = clients[localClientId];
     if (client) {
         sendMovementData(client);
     }
@@ -32,40 +32,39 @@ setInterval(function () {
 function sendMovementData(client) {
     // get movement since last one sent to server
     let deltaPosition = {
-        x: client.position.x - client.lastPosition.x,
-        y: client.position.y - client.lastPosition.y,
-        dx: client.direction.x - client.lastPosition.dx,
-        dy: client.direction.y - client.lastPosition.dy,
+        x: client.position.x - client.networkData.lastPosition.x,
+        y: client.position.y - client.networkData.lastPosition.y,
+        dx: client.direction.x - client.networkData.lastPosition.dx,
+        dy: client.direction.y - client.networkData.lastPosition.dy,
     }
 
     // If there was movement, notify the server
     if (Math.abs(deltaPosition.x) + Math.abs(deltaPosition.y) + Math.abs(deltaPosition.dx) + Math.abs(deltaPosition.dy) > 0) {
-        client.lastPosition = { x: client.position.x, y: client.position.y, dx: client.direction.x, dy: client.direction.y };
+        client.networkData.lastPosition = { x: client.position.x, y: client.position.y, dx: client.direction.x, dy: client.direction.y };
         // send movement to server for validation
-        let movementData = { movement: deltaPosition, sequence: ++client.sequence };
+        let movementData = { movement: deltaPosition, sequence: ++client.networkData.sequence };
         socket.emit('update', movementData);
 
         // store movements for later reconciliation
-        client.pendingMovement.push(movementData);
+        client.networkData.pendingMovement.push(movementData);
     }
 }
 
 socket.on('update', function (data) {
     let timestamp = +new Date();
-
-    timer.setServerDelay(timestamp);
+    time.setServerDelay(timestamp);
 
     lastServerTimestamp = data.timestamp;
     let serverUsers = data.clients;
-    for (let id in serverUsers) {
-        let playerData = serverUsers[id];
-        if (!clients[id]) {
-            clients[id] = new Client(playerData.id, playerData.position);
+    for (let clientId in serverUsers) {
+        let playerData = serverUsers[clientId];
+        if (!clients[clientId]) {
+            clients[clientId] = new Client(playerData.networkData.clientId, playerData.position);
         }
 
-        let client = clients[id];
+        let client = clients[clientId];
 
-        if (id == clientId) {
+        if (clientId == localClientId) {
 
             // if there was movement since the last server update, send it now
             sendMovementData(client)
@@ -79,12 +78,12 @@ socket.on('update', function (data) {
 
             // Server Reconciliation. Re-apply all the inputs not yet processed by the server.
             var j = 0;
-            while (j < client.pendingMovement.length) {
-                let movementData = client.pendingMovement[j];
-                if (movementData.sequence <= playerData.sequence) {
+            while (j < client.networkData.pendingMovement.length) {
+                let movementData = client.networkData.pendingMovement[j];
+                if (movementData.sequence <= playerData.networkData.sequence) {
                     // Already processed. Its effect is already taken into account into the world update
                     // we just got, so we can drop it.
-                    client.pendingMovement.splice(j, 1);
+                    client.networkData.pendingMovement.splice(j, 1);
                 } else {
                     client.position.x += movementData.movement.x;
                     client.position.y += movementData.movement.y;
@@ -98,7 +97,7 @@ socket.on('update', function (data) {
             // Received the position of an client other than this client's.
 
             // Add it to the position buffer.
-            client.positionBuffer.push({ timestamp: timestamp, position: playerData.position, direction: playerData.direction });
+            client.networkData.positionBuffer.push({ timestamp: timestamp, position: playerData.position, direction: playerData.direction });
         }
     }
 

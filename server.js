@@ -1,12 +1,14 @@
 class Client {
-  constructor(id) {
-    this.id = id;
+  constructor(clientId) {
     this.position = {
       x: Math.random() * 300,
       y: Math.random() * 300
     };
     this.direction = { x: 1, y: 0 };
-    this.sequence = 0;
+    this.networkData = {
+      clientId: clientId,
+      sequence: 0
+    };
   }
 }
 var clients = {};
@@ -27,7 +29,7 @@ const io = socketIO(server);
 
 io.on('connection', function (socket) {
   let client = new Client(socket.id);
-  clients[socket.id] = client;
+  clients[client.networkData.clientId] = client;
   socket.emit('init', client);
 
   socket.on('update', function (movementData) {
@@ -36,7 +38,7 @@ io.on('connection', function (socket) {
     client.position.y += movementData.movement.y;
     client.direction.x += movementData.movement.dx;
     client.direction.y += movementData.movement.dy;
-    client.sequence = movementData.sequence;
+    client.networkData.sequence = movementData.sequence;
   });
 
   socket.on('disconnect', function () {
